@@ -5,7 +5,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import A4
 
-# ---------- Conversion ----------
+# ---------------- Conversion ----------------
 def docx_bytes_to_pdf_bytes(docx_bytes: bytes) -> bytes:
     bio = BytesIO(docx_bytes)
     document = Document(bio)
@@ -21,78 +21,101 @@ def docx_bytes_to_pdf_bytes(docx_bytes: bytes) -> bytes:
     doc.build(story)
     return pdf_buffer.getvalue()
 
-# ---------- Page config ----------
+# ---------------- Page setup ----------------
 st.set_page_config(
-    page_title="DOCX to PDF Converter",
-    page_icon="📄".encode("ascii", "ignore").decode(),  # safe no-emoji fallback
+    page_title="DOCX to PDF | Fast Converter",
     layout="centered",
 )
 
-# ---------- Minimal CSS ----------
+# ---------------- Theming / CSS ----------------
 st.markdown(
     """
     <style>
-      .stApp {
-        background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+      :root { --brand:#2563eb; --ink:#0f172a; --muted:#64748b; }
+      .stApp { 
+        background: radial-gradient(80% 60% at 20% 0%, #eff6ff 0%, #f8fafc 40%, #eef2f7 100%);
       }
-      .app-card {
-        max-width: 720px;
-        margin: 2rem auto;
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-        border-radius: 16px;
-        padding: 28px 28px 22px;
+      .topbar {
+        position: sticky; top: 0; z-index: 10;
+        display:flex; align-items:center; gap:10px;
+        padding: 14px 18px; margin: -2rem -1rem 0 -1rem;
+        background: rgba(255,255,255,0.7); backdrop-filter: blur(6px);
+        border-bottom: 1px solid #e5e7eb;
       }
-      .title {
-        font-weight: 800;
-        font-size: 28px;
-        letter-spacing: 0.3px;
-        margin-bottom: 6px;
+      .logo { 
+        width: 28px; height: 28px; border-radius:8px; 
+        background: var(--brand); display:inline-block;
       }
-      .subtitle {
-        color: #475569;
-        margin-bottom: 18px;
+      .brand { font-weight:800; color: var(--ink); letter-spacing:.3px; }
+      .hero {
+        max-width: 860px; margin: 36px auto 0 auto;
+        text-align:left;
       }
-      .hint {
-        font-size: 12px;
-        color: #64748b;
-        margin-top: 10px;
+      .h1 { font-size: 40px; line-height: 1.1; font-weight: 900; color: var(--ink); }
+      .lead { color: var(--muted); margin-top: 8px; font-size: 16px; }
+      .card {
+        max-width: 860px; margin: 22px auto; padding: 26px 26px 20px 26px;
+        background: rgba(255,255,255,0.9);
+        border: 1px solid #e5e7eb; border-radius: 16px;
+        box-shadow: 0 12px 30px rgba(2,6,23,0.06);
       }
-      .footer {
-        text-align: center;
-        color: #94a3b8;
-        font-size: 12px;
-        margin-top: 18px;
+      .hint { font-size: 12px; color: #6b7280; margin-top: 12px; }
+      .footer { text-align:center; color:#94a3b8; font-size:12px; margin-top:22px; }
+      /* Uploader polish */
+      [data-testid="stFileUploader"] section div {
+        border: 1px dashed #c7d2fe !important;
+        background: #f8fafc !important;
+      }
+      [data-testid="stFileUploader"] label { color:#475569; font-weight:600; }
+      .btn-row { display:flex; gap:10px; align-items:center; }
+      .pill {
+        display:inline-block; background:#eef2ff; color:#4338ca;
+        padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600;
+        border:1px solid #c7d2fe;
       }
     </style>
     """,
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
 
-# ---------- UI ----------
+# ---------------- Top bar ----------------
+st.markdown(
+    '<div class="topbar"><span class="logo"></span>'
+    '<span class="brand">Docx2PDF</span></div>',
+    unsafe_allow_html=True
+)
+
+# ---------------- Hero ----------------
+st.markdown(
+    '<div class="hero">'
+    '<div class="h1">DOCX to PDF Converter</div>'
+    '<div class="lead">Clean, fast conversion for text-based Word documents. '
+    'No sign-up needed.</div>'
+    '</div>',
+    unsafe_allow_html=True
+)
+
+# ---------------- Main card ----------------
 with st.container():
-    st.markdown('<div class="app-card">', unsafe_allow_html=True)
+    st.markdown('<div class="card">', unsafe_allow_html=True)
 
-    st.markdown('<div class="title">DOCX to PDF Converter</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="subtitle">Upload a .docx file and get a clean PDF. Best for text-based documents.</div>',
-        unsafe_allow_html=True,
-    )
+    col1, col2 = st.columns([3, 1.2], vertical_alignment="center")
+    with col1:
+        st.write("Choose a .docx file")
+    with col2:
+        st.markdown('<span class="pill">Free tool</span>', unsafe_allow_html=True)
 
-    max_mb = 10  # file size limit
-    uploaded = st.file_uploader("Choose a .docx file", type=["docx"])
+    max_mb = 15
+    uploaded = st.file_uploader(" ", type=["docx"], label_visibility="collapsed")
 
     if uploaded is not None:
         size_mb = uploaded.size / (1024 * 1024)
-        st.write(f"File: {uploaded.name}  |  Size: {size_mb:.2f} MB")
-
+        st.write(f"Selected: {uploaded.name}  |  Size: {size_mb:.2f} MB")
         if size_mb > max_mb:
             st.error(f"File is larger than {max_mb} MB. Please upload a smaller file.")
         else:
-            with st.spinner("Converting..."):
+            with st.spinner("Converting to PDF..."):
                 pdf_bytes = docx_bytes_to_pdf_bytes(uploaded.read())
-
             st.success("Conversion complete.")
             st.download_button(
                 label="Download PDF",
@@ -102,17 +125,15 @@ with st.container():
             )
 
     st.markdown(
-        '<div class="hint">Note: Complex Word layouts (images, columns, headers/footers) may render differently. '
-        "This tool focuses on text fidelity.</div>",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<div class="footer">Made with Streamlit • DOCX to PDF</div>',
-        unsafe_allow_html=True,
+        '<div class="hint">Note: Complex Word layouts (images, columns, headers/footers)'
+        ' can render differently. This tool focuses on text fidelity.</div>',
+        unsafe_allow_html=True
     )
 
     st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('<div class="footer">© Docx2PDF • Built with Streamlit</div>', unsafe_allow_html=True)
+
 
 
 
